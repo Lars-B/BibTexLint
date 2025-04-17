@@ -10,3 +10,4 @@ Current TODOs and functions that are planned:
    - the above is because I had a scenario where I had to remove all hyper links from a bib file....
  - Correct/homogenize incorrect captializations within the file given some rule
  - Check if spelling of authors/title etc. is correct?
+ - Maybe homogenize citations keys to be sensible according to some rule

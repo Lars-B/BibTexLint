@@ -1,6 +1,11 @@
+mod bibtex;
+mod utils;
+
 use std::fs;
 use std::path::Path;
 use regex::Regex;
+use bibtex::parse_bibtex;
+use utils::field_matches_any_ci;
 
 fn main() {
     let path = "data/sources.bib";
@@ -22,8 +27,28 @@ fn main() {
 
     println!("Found {} entries.", entries.len());
 
-    // Optional: print the first one
-    if let Some(first) = entries.first() {
-        println!("First entry:\n{}\n", first);
+    for entry in &entries {
+        if let Some(entry) = parse_bibtex(entry) {
+            // todo make this list more extensive
+            let arxiv_names = ["arxiv", "biorxiv", "somethingelse..."];
+            if field_matches_any_ci(&entry, "journal", &arxiv_names) {
+                println!("This entry is from a known journal.");
+                println!("{}", entry.citation_key);
+                println!("{}", entry.entry_type);
+                for (key, value) in entry.fields.iter() {
+                    println!("{}: {}", key, value);
+                }
+            }
+            // } else {
+            //     println!("Journal not recognized.");
+            // }
+            // println!("Citation Key: {}", entry.citation_key);
+            // println!("Entry Type: {}", entry.entry_type);
+            // for (key, value) in entry.fields.iter() {
+            //     println!("{}: {}", key, value);
+            // }
+        } else {
+            println!("Failed to parse BibTeX entry.");
+        }
     }
 }
