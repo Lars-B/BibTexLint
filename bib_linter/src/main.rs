@@ -32,6 +32,10 @@ fn main() {
             // todo make this list more extensive
             let arxiv_names = ["arxiv", "biorxiv", "somethingelse..."];
             if field_matches_any_ci(&entry, "journal", &arxiv_names) {
+                // todo check out this scraper...
+                // https://github.com/bertof/gscite/blob/main/src/lib.rs
+                // https://medium.com/@darshankhandelwal12/web-scraping-google-with-rust-6c80fa55234f
+
                 println!("This entry is from a known journal.");
                 println!("{}", entry.citation_key);
                 println!("{}", entry.entry_type);
