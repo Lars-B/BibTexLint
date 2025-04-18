@@ -1,0 +1,17 @@
+[project]
+name = "bibtexlint"
+version = "0.1.0"
+description = "Linting .bib files and updating preprint papers automatically."
+authors = [
+    { name = "Lars-B", email = "berlinglars96@gmail.com" }
+]
+license = { text = "LGPL-3.0-or-later" }
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
