@@ -1,3 +1,5 @@
+import warnings
+
 import requests
 
 
@@ -11,12 +13,17 @@ class PreprintHandler():
     def _make_api_request(self, doi):
         """Common logic to make an API request."""
         # Perform the API call
-        response = requests.get(f"{self.api_url}/{doi}")
+        try:
+            response = requests.get(f"{self.api_url}/{doi}")
+        except requests.exceptions.MissingSchema:
+            warnings.warn(f"API request failed ({doi}), will be ignored.")
+            return None
         if response.status_code == 200:
             return response.json()
         else:
-            raise ValueError(f"API request failed with status code "
-                             f"{response.status_code}...")
+            warnings.warn(f"API request for doi:{doi} failed with status code "
+                          f"{response.status_code}...")
+            return None
 
     def _find_doi(self):
         """
@@ -29,29 +36,32 @@ class PreprintHandler():
         return doi
 
     def handle_published(self, data):
-        published_entry = ""
-        # todo need to do doi2bib with the published doi.
         published_doi = data['collection'][0][self.published_key]
-        # test = f"https://doi.org/{published_doi}"
-        test = {
+        doi_request = {
             "url": f"https://doi.org/{published_doi}",
             "headers": {
                 "Accept": "application/x-bibtex; charset=utf-8"
             }
         }
-        response = requests.get(test["url"], headers=test["headers"])
+        response = requests.get(doi_request["url"],
+                                headers=doi_request["headers"])
         if response.status_code != 200:
+            warnings.warn(f"Something went wrong with the doi-API-request of:"
+                          f"{published_doi}")
             raise ValueError(f"API request failed with status code "
                              f"{response.status_code}...")
-        new_citation = response.text
-        return published_entry
+        return response.text
 
     def update_preprint(self, entry):
         print(f"Checking a preprint: {entry['fields']['title']}")
         if "doi" in entry["fields"]:
             response = self._make_api_request(entry["fields"]["doi"])
+            if not response:
+                # API request failed, warnings were printed and we simply return
+                return entry
             if not self.published_key in response['collection'][0]:
-                print("Publication is not yet published")
+                print(f"Publication ({entry["fields"]["doi"]}) is not yet "
+                      f"published...")
                 return entry
             # the preprint is now published, we need to update the entry
             published_entry = self.handle_published(response)
@@ -65,16 +75,17 @@ class PreprintHandler():
 preprint_strategies = {
     "biorxiv":
         PreprintHandler(
-            "bioRxiv",
-            {"api_url": "https://api.biorxiv.org/pubs/biorxiv",
-             "published_key": "published_doi"
-             }),
+            name="bioRxiv",
+            config={"api_url":
+                        "https://api.biorxiv.org/pubs/biorxiv",
+                    "published_key": "published_doi"
+                    }),
     "medrxiv":
-        PreprintHandler("arXiv",
-                        {"api_url":
-                             "https://api.biorxiv.org/pubs/medrxiv",
-
-                         }),
+        PreprintHandler(name="arXiv",
+                        config={"api_url":
+                                    "https://api.biorxiv.org/pubs/medrxiv",
+                                "published_key": "published_doi"
+                                }),
     "arxiv":
         PreprintHandler("", {
             "api_url": "",
