@@ -21,7 +21,7 @@ def parse_bibtex(file_name: str) -> list[dict[str, str]]:
     """
     assert os.path.exists(file_name), f"File {file_name} does not exist"
     entries = []
-    bib_file_text = Path(file_name).read_text()
+    bib_file_text = Path(file_name).read_text(encoding="utf-8")
 
     raw_entries = re.findall(r'@(\w+)\s*\{\s*([^,]+),(.*?)\n}',
                              bib_file_text,
@@ -29,9 +29,13 @@ def parse_bibtex(file_name: str) -> list[dict[str, str]]:
     for entry_type, entry_key, fields_block in raw_entries:
         fields = {}
         # Match each key = {value} or key = "value"
-        field_matches = re.findall(r'(\w+)\s*=\s*[{"]([^"}]+)[}"]', fields_block)
-        for field_name, value in field_matches:
-            fields[field_name.strip()] = value.strip()
+        # field_matches = re.findall(r'(\w+)\s*=\s*[{"]([^"}]+)[}"]', fields_block)
+        raw_fields = fields_block.split(",")
+        for raw_value in raw_fields:
+            field_name, value = raw_value.split("=")
+            # the following value.strip()[1:-1] assumes that the value is
+            # surrounded by "{}"
+            fields[field_name.strip()] = value.strip()[1:-1]
 
         entries.append({
             "type": entry_type.lower(),
