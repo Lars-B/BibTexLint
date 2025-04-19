@@ -1,15 +1,20 @@
 """
 Module that checks all preprints and updates them if required.
 """
+import re
+
 from bibtexlint._preprint_strategies import preprint_strategies
+from bibtexlint.parser import parse_field_block
 
 
 def check_preprint(entry):
-    """Check if the entry is a preprint and use the correct strategy."""
+    """
+    Check if the entry is a preprint and use the correct strategy.
+    """
     # the following will likely need to be extended in the future...
     journal = "None"
     if "journal" in entry["fields"]:
-        # This is for biorxiv
+        # This is for bioRxiv/medRxiv
         journal = entry["fields"]["journal"]
     elif "archivePrefix" in entry["fields"]:
         # This is for arxiv
@@ -24,6 +29,16 @@ def check_preprint(entry):
         # Get the appropriate strategy based on the journal
         strategy = preprint_strategies[journal.lower()]
         entry = strategy.update_preprint(entry)
+        if not isinstance(entry, dict):
+            doi_bib_entry_pattern = r'@(\w+)\{\s*([^,]+)\s*,(.*)}'
+            entry_type, citation_key, raw_fields = re.findall(
+                doi_bib_entry_pattern, entry)[0]
+            fields = parse_field_block(raw_fields)
+            return {
+                "type": entry_type.lower(),
+                "key": citation_key.strip(),
+                "fields": fields
+            }
 
-    # No matter what happens above, we return the entrys
+    # return an updated or unchanged entry.
     return entry
