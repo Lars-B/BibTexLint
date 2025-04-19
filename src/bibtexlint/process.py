@@ -13,4 +13,4 @@ def process_bib_file(input_file):
 
 
 if __name__ == '__main__':
-    process_bib_file("../../data/sources.bib")
+    process_bib_file("../../data/small_test.bib")

@@ -42,8 +42,16 @@ class MedRxivPreprintStrategy(PreprintStrategy):
         #     print("medRxiv entry not found.")
 
 
+class arxivPreprintStrategy(PreprintStrategy):
+    def update_preprint(self, entry):
+        print(f"Checking arxiv preprint: {entry['fields']['title']}")
+        return entry
+
+
+# these are all supported preprint servers
+# add lowercase key and class here, class implementation above
 preprint_strategies = {
-    "bioRxiv": BioRxivPreprintStrategy(),
-    "medRxiv": MedRxivPreprintStrategy(),
-    # Here is where we will add different strategies
+    "biorxiv": BioRxivPreprintStrategy(),
+    "medrxiv": MedRxivPreprintStrategy(),
+    "arxiv": arxivPreprintStrategy()
 }
