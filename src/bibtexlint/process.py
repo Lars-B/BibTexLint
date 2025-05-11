@@ -8,6 +8,9 @@ def process_bib_file(input_file):
     updated_entries = []
 
     for entry in entries:
+        # todo fields should be formated, without the \n in them...
+        #  re.sub(r'\s+', ' ', original_string).strip() removes all whitespace
+        #  and line breaks together....
         checked_entry = check_preprint(entry)
         # todo how do we want to handle all the entries?
         #  the updated prerpints are just bib citaitons that need to be

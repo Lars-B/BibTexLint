@@ -2,6 +2,12 @@ import warnings
 
 import requests
 from habanero import Crossref
+from rapidfuzz import fuzz
+
+
+def is_similar(title1, title2, threshold=85):
+    score = fuzz.ratio(title1.lower(), title2.lower())
+    return score >= threshold
 
 
 class PreprintHandler():
@@ -26,17 +32,34 @@ class PreprintHandler():
                           f"{response.status_code}...")
             return None
 
-    def _find_doi(self, title):
+    def _find_doi(self, entry):
         """
         This function will try to find the DOI, using crossref first result.
-        :return:
-        :rtype:
         """
+        title = entry['fields']['title']
         cr = Crossref()
         results = cr.works(query=title)
-        assert results["status"] == "ok", "Crossref() query failed..."
-        relevant_result_doi = results["message"]["items"][0]["DOI"]
-        return relevant_result_doi
+        if not results["status"] == "ok":
+            warnings.warn("Crossref search was not ok...")
+            return None
+        first_result = results["message"]["items"][0]
+        # checking similarity of titles:
+        t1 = title.strip().lower()
+        t2 = first_result["title"][0].strip().lower()
+        if not t1 == t2:
+            if not is_similar(t1, t2):
+                warnings.warn(f"Found new publication on crossref but titles "
+                              f"don't match OLD:{t1} -- NEW:{t2}")
+                return None
+        author_string = entry['fields']['author']
+        for a in first_result['author']:
+            family_name = a.get("family", "")
+            if family_name not in author_string:
+                warnings.warn(
+                    f"Author family name '{family_name}' not found in "
+                    f"previous author list!. Because titles are similar "
+                    f"enough, this will be ignored...")
+        return first_result["DOI"]
 
     def handle_published(self, published_doi):
         doi_request = {
@@ -58,14 +81,19 @@ class PreprintHandler():
         print(f"Checking a preprint: {entry['fields']['title']}")
         if "doi" in entry["fields"]:
             if self.name == "arXiv":
-                # todo add arXiv strat
-                # new_doi = search_publication(entry)
-                assert 'title' in entry['fields'], "Todo throw error..."
-                new_doi = self._find_doi(entry['fields']['title'])
-                assert new_doi != entry["fields"]["doi"], "Shouldn't be same.."
+                # todo what if arXiv has a publication linked?
+                if 'title' not in entry['fields']:
+                    raise KeyError("Missing required field: 'title'")
+                new_doi = self._find_doi(entry)
+                if new_doi == None:
+                    # failed crossref result... returning original entry
+                    return entry
+                if new_doi == entry["fields"]["doi"]:
+                    warnings.warn(f"Crossref first result was the same article."
+                                  f"Returning original entry for "
+                                  f"{entry['key']}")
+                    return entry
                 published_entry = self.handle_published(new_doi)
-                # todo maybe add some more checks that this is the same
-                #  publication...
                 return published_entry
             response = self._make_api_request(entry["fields"]["doi"])
             if not response:
