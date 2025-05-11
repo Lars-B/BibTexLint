@@ -1,6 +1,7 @@
 import warnings
 
 import requests
+from habanero import Crossref
 
 
 class PreprintHandler():
@@ -25,18 +26,19 @@ class PreprintHandler():
                           f"{response.status_code}...")
             return None
 
-    def _find_doi(self):
+    def _find_doi(self, title):
         """
-        This function will try to find the DOI for a preprint.
+        This function will try to find the DOI, using crossref first result.
         :return:
         :rtype:
         """
-        doi = ""
-        # todo try to find doi for an entry that does not have one...
-        return doi
+        cr = Crossref()
+        results = cr.works(query=title)
+        assert results["status"] == "ok", "Crossref() query failed..."
+        relevant_result_doi = results["message"]["items"][0]["DOI"]
+        return relevant_result_doi
 
-    def handle_published(self, data):
-        published_doi = data['collection'][0][self.published_key]
+    def handle_published(self, published_doi):
         doi_request = {
             "url": f"https://doi.org/{published_doi}",
             "headers": {
@@ -55,6 +57,16 @@ class PreprintHandler():
     def update_preprint(self, entry):
         print(f"Checking a preprint: {entry['fields']['title']}")
         if "doi" in entry["fields"]:
+            if self.name == "arXiv":
+                # todo add arXiv strat
+                # new_doi = search_publication(entry)
+                assert 'title' in entry['fields'], "Todo throw error..."
+                new_doi = self._find_doi(entry['fields']['title'])
+                assert new_doi != entry["fields"]["doi"], "Shouldn't be same.."
+                published_entry = self.handle_published(new_doi)
+                # todo maybe add some more checks that this is the same
+                #  publication...
+                return published_entry
             response = self._make_api_request(entry["fields"]["doi"])
             if not response:
                 # API request failed, warnings were printed and we simply return
@@ -64,10 +76,15 @@ class PreprintHandler():
                       f"published...")
                 return entry
             # the preprint is now published, we need to update the entry
-            published_entry = self.handle_published(response)
+            published_entry = (
+                self.handle_published(
+                    response['collection'][0][self.published_key]
+                )
+            )
             return published_entry
         else:
             raise NotImplementedError("Will need to find DOI somehow....")
+
 
 # these are all supported preprint servers
 # add lowercase key and class here, class implementation above
@@ -81,13 +98,13 @@ preprint_strategies = {
                     "published_key": "published_doi"
                     }),
     "medrxiv":
-        PreprintHandler(name="arXiv",
+        PreprintHandler(name="medrxiv",
                         config={"api_url":
                                     "https://api.biorxiv.org/pubs/medrxiv",
                                 "published_key": "published_doi"
                                 }),
     "arxiv":
-        PreprintHandler("", {
+        PreprintHandler("arXiv", {
             "api_url": "",
             "published_key": ""
             # todo this seesm to not exist..

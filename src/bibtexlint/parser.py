@@ -35,7 +35,7 @@ def parse_bibtex_file(file_name: str) -> list[dict[str, str]]:
     return parse_bibtex_text(bib_file_text)
 
 
-def parse_bibtex_text(bib_text: str):
+def parse_bibtex_text(bib_text: str) -> list:
     entries = []
     pos = 0
     while pos < len(bib_text):
