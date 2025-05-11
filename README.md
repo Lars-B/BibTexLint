@@ -12,6 +12,10 @@ Current TODOs and functions that are planned:
  - Check if spelling of authors/title etc. is correct?
  - Maybe homogenize citations keys to be sensible according to some rule
 
+# Document poetry usage...
+
+TODO 
+
 # Some notes:
 
 https://api.biorxiv.org/
