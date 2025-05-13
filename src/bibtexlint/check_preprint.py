@@ -3,7 +3,7 @@ Module that checks all preprints and updates them if required.
 """
 import re
 
-from bibtexlint._preprint_strategies import preprint_strategies
+from bibtexlint.preprint_strategies import preprint_strategies
 from bibtexlint.parser import parse_field_block
 
 
