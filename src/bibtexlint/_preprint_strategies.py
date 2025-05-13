@@ -20,6 +20,8 @@ class PreprintHandler():
     def _make_api_request(self, doi):
         """Common logic to make an API request."""
         # Perform the API call
+        if self.name == "arXiv":
+            return None
         try:
             response = requests.get(f"{self.api_url}/{doi}")
         except requests.exceptions.MissingSchema:
@@ -81,11 +83,10 @@ class PreprintHandler():
         print(f"Checking a preprint: {entry['fields']['title']}")
         if "doi" in entry["fields"]:
             if self.name == "arXiv":
-                # todo what if arXiv has a publication linked?
                 if 'title' not in entry['fields']:
                     raise KeyError("Missing required field: 'title'")
                 new_doi = self._find_doi(entry)
-                if new_doi == None:
+                if new_doi is None:
                     # failed crossref result... returning original entry
                     return entry
                 if new_doi == entry["fields"]["doi"]:
@@ -132,11 +133,9 @@ preprint_strategies = {
                                 "published_key": "published_doi"
                                 }),
     "arxiv":
-        PreprintHandler("arXiv", {
-            "api_url": "",
-            "published_key": ""
-            # todo this seesm to not exist..
-            #  in this case I will have to google scholar
-            # todo also need to set api_url for arxiv and figure out next steps
-        })
+        PreprintHandler("arXiv",
+                        {
+                            "api_url": "TheArxivAPIisNotAsNiceAsTheAbove...",
+                            "published_key": "Sad"
+                        })
 }

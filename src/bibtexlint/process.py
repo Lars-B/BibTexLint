@@ -29,6 +29,4 @@ def process_bib_file(input_file):
 
 
 if __name__ == '__main__':
-    # todo find test case where arxiv has the updated publication, should
-    #  easier?
     process_bib_file("../../data/small_test.bib")

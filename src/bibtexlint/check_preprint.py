@@ -24,6 +24,8 @@ def check_preprint(entry):
             # arxiv doi: 10.48550/arXiv.[arXiv-id]
             entry["fields"]["doi"] = (f"10.48550/arXiv."
                                       f"{entry["fields"]["eprint"]}")
+    elif "publisher" in entry["fields"]:
+        journal = entry["fields"]["publisher"]
 
     if journal.lower() in preprint_strategies:
         # Get the appropriate strategy based on the journal
