@@ -10,7 +10,12 @@ def find_doi(entry):
     """
     title = entry['fields']['title']
     cr = Crossref()
-    results = cr.works(query=title)
+    try:
+        results = cr.works(query=title)
+    except RuntimeError as e:
+        warnings.warn(f'Problem for cross ref request with {title}')
+        warnings.warn(f"RuntimeError during Crossref query: {e}")
+        return None
     if not results["status"] == "ok":
         warnings.warn("Crossref search was not ok...")
         return None
