@@ -57,6 +57,8 @@ class PreprintHandler:
             new_doi = find_doi(entry)
             if new_doi is None:
                 # failed crossref result... returning original entry
+                # tag for later sorting
+                entry['incomplete_entry'] = True
                 return entry
             if new_doi == entry["fields"]["doi"]:
                 warnings.warn(f"Crossref first result was the same article."
@@ -66,13 +68,19 @@ class PreprintHandler:
             published_entry = handle_published(new_doi)
             return published_entry
         response = self.make_api_request(entry["fields"]["doi"])
-        if not response:
-            # API request failed, warnings were printed and we simply return
+        if not response or not response.get('collection'):
+            # Print any warning or error messages from the API response
+            messages = response.get('messages') if response else None
+            if messages:
+                print("API response messages:")
+                for msg in messages:
+                    print(f"  - {msg}")
+            else:
+                print("Warning: API request failed or returned no collection.")
+            # Tag for later sorting to top
+            entry['incomplete_entry'] = True
             return entry
-        if not self.published_key in response['collection'][0]:
-            print(f"Publication ({entry["fields"]["doi"]}) is not yet "
-                  f"published...")
-            return entry
+
         # the preprint is now published, we need to update the entry
         published_entry = (
             handle_published(
