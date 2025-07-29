@@ -24,6 +24,5 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["src/bibtexlint"]
 
-# todo
-#[project.scripts]
-#biblint = "bibtexlint....:main"
+[project.scripts]
+bibble = "bibtexlint.process:main"

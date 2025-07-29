@@ -1,10 +1,47 @@
+import argparse
+import os
+import sys
+
 from bibtexlint.check_preprint import check_preprint
 from bibtexlint.linter import lint_entry
 from bibtexlint.parser import parse_bibtex_file
 
 
-def process_bib_file(input_file, author_format='last_first'):
-    entries = parse_bibtex_file(input_file)
+def main():
+
+    parser = argparse.ArgumentParser(
+        description='Reformating a bib file and updating preprints if possible',
+        prog='bibble')
+    parser.add_argument(
+        '-i', '--input-file',
+        help='Input .bib file path',
+        required=True,
+    )
+    parser.add_argument('-o', '--output-file',
+                        help='Output .bib file (default: standard output), '
+                             'filepaths given will be overwritten if existing!',
+                        type=argparse.FileType('w'),
+                        default=sys.stdout,
+                        )
+    parser.add_argument('-caf', '--change-authorname-format',
+                        action='store_true',
+                        help="If passed author names will be written as "
+                             "**first-name last-name**, default is "
+                             "**last-name, first-name**.")
+
+    args = parser.parse_args()
+
+    if not os.path.isfile(args.input_file):
+        print(f"Error: input .bib file {args.input_file} does not exist!",
+              file=sys.stderr)
+        sys.exit(1)
+
+    # todo clean up this to be a bool instead, also no need to pass down?
+    author_format = 'last_first'
+    if args.change_authorname_format:
+        author_format = 'first_last'
+
+    entries = parse_bibtex_file(args.input_file)
     updated_entries = []
 
     for entry in entries:
@@ -28,7 +65,6 @@ def process_bib_file(input_file, author_format='last_first'):
         'booklet': 12,
         'unpublished': 13
     }
-
     type_labels = {
         'article': 'Journal Articles',
         'book': 'Books',
@@ -63,10 +99,10 @@ def process_bib_file(input_file, author_format='last_first'):
         # Print a special section for entries that failed lookup
         if cur_entry.get("incomplete_entry", False):
             if not printed_lookup_failed_header:
-                print(
+                args.output_file.write(
                     "% --------------------------------\n"
                     "% Incomplete/Unpublished Entries\n"
-                    "% Manual cleanup might be required"
+                    "% Manual cleanup might be required\n"
                     "% --------------------------------\n"
                 )
                 printed_lookup_failed_header = True
@@ -75,7 +111,7 @@ def process_bib_file(input_file, author_format='last_first'):
             # Print type-based header if this is a new type group
             if entry_type != current_type:
                 label = type_labels.get(entry_type, entry_type.capitalize())
-                print(
+                args.output_file.write(
                     f"\n"
                     f"% {'-' * len(label)}\n"
                     f"% {label}\n"
@@ -89,13 +125,12 @@ def process_bib_file(input_file, author_format='last_first'):
             f"{k} = {{{v}}}," for k, v in fields.items())
         cit = f"@{cur_entry['type']}{{{cur_entry['key']},\n  {formatted_fields}\n}}"
 
-        print(cit)
-    return 0
+        args.output_file.write(cit + '\n')
 
+    print('Finished...')
 
 if __name__ == '__main__':
     # todo set email for the cross ref api stuff should be possible to be nice
-    # todo finishe output to file in appropriate format with some rules
-    # todo if above update README and publish first release...
-    # todo write and upload documentation too...
-    process_bib_file("../../data/small_test.bib")
+    # todo can we generate a nice citation key?
+    # todo add logger instead of regular print out...
+    main()
